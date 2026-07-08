@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAS产品知识加强培训</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--primary:#2563eb;--primary-light:#eff6ff;--accent:#f59e0b;--text:#0f172a;--text2:#64748b;--border:#e2e8f0;--radius:10px;--shadow:0 1px 2px rgba(0,0,0,0.05);--shadow-md:0 4px 12px rgba(0,0,0,0.06)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+.topbar .logo{display:flex;align-items:center;gap:10px}
+.topbar .logo svg{width:22px;height:22px;color:var(--primary)}
+.topbar h1{font-size:16px;font-weight:700;letter-spacing:-0.3px;white-space:nowrap}
+.topbar .stats{display:flex;gap:12px;font-size:12px;color:var(--text2)}
+.topbar .stats span{background:#f1f5f9;padding:3px 10px;border-radius:6px;font-weight:600;color:var(--text)}
+
+.main{display:flex;height:calc(100vh - 52px);overflow:hidden}
+
+/* Left panel */
+.left{width:380px;min-width:380px;background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.left-header{padding:14px 16px 10px;border-bottom:1px solid #f1f5f9}
+.left-header .upload-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.left-header .file-info{font-size:11px;color:var(--text2)}
+.left-header .btn-upload{font-size:11px;padding:4px 10px;border-radius:5px;border:1px dashed var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;white-space:nowrap}
+.left-header .btn-upload:hover{background:#f8fafc}
+
+.search-box{margin:0 16px 8px}
+.search-wrap{display:flex;align-items:center;background:#f8fafc;border-radius:8px;padding:2px 2px 2px 10px;border:2px solid transparent;transition:all 0.2s;gap:4px}
+.search-wrap:focus-within{border-color:var(--primary);background:#fff}
+.search-wrap input{flex:1;border:none;outline:none;font-size:14px;padding:8px 0;background:transparent;font-family:inherit;color:var(--text);min-width:0}
+.search-wrap input::placeholder{color:#cbd5e1}
+.search-wrap .btn-icon{width:28px;height:28px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#94a3b8;transition:all 0.15s}
+.search-wrap .btn-icon:hover{background:#e2e8f0;color:#64748b}
+.search-wrap .btn-icon.ocr{color:var(--primary)}
+.search-wrap .btn-icon.ocr:hover{background:var(--primary-light)}
+.search-wrap .btn-icon svg{width:15px;height:15px}
+
+.filter-row{display:flex;gap:5px;padding:0 16px 8px;flex-wrap:wrap}
+.filter-chip{font-size:11px;padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-weight:500;transition:all 0.15s;white-space:nowrap;color:var(--text2)}
+.filter-chip:hover{border-color:#94a3b8}
+.filter-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+.result-list{flex:1;overflow-y:auto;padding:0 16px 10px}
+.result-list::-webkit-scrollbar{width:4px}
+.result-list::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
+
+.result-item{background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:all 0.15s;border:1px solid #f1f5f9;border-left:3px solid transparent}
+.result-item:hover{background:#f8fafc;border-color:#e2e8f0}
+.result-item.selected{border-left-color:var(--primary);background:var(--primary-light);border-color:#bfdbfe}
+.result-item .q-text{font-size:13px;line-height:1.5;font-weight:500}
+.result-item .q-meta{display:flex;gap:5px;margin-top:4px}
+.result-item .q-meta span{font-size:10px;padding:2px 6px;border-radius:6px;font-weight:600}
+.meta-single{background:#dbeafe;color:#1d4ed8}
+.meta-multi{background:#fef3c7;color:#b45309}
+.meta-cat{background:#f1f5f9;color:#64748b}
+.result-item .hint{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* Right panel */
+.right{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#f8fafc}
+.right-placeholder{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#cbd5e1}
+.right-placeholder svg{width:64px;height:64px;margin-bottom:12px;opacity:0.3}
+.right-placeholder p{font-size:14px}
+
+.detail-panel{flex:1;overflow-y:auto;padding:24px 32px}
+.detail-panel::-webkit-scrollbar{width:4px}
+.detail-panel::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
+
+.detail-card{background:#fff;border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow-md);max-width:700px}
+.detail-card .dc-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.detail-card .dc-badge{font-size:11px;padding:3px 10px;border-radius:6px;font-weight:600}
+.detail-card .dc-question{font-size:15px;line-height:1.7;font-weight:500;margin-bottom:18px;padding:14px 16px;background:#f8fafc;border-radius:8px;border-left:3px solid var(--primary)}
+.detail-card .dc-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.detail-card .dc-answer{font-size:14px;padding:10px 14px;background:#f0fdf4;border-radius:8px;margin-bottom:6px;line-height:1.5;color:#166534;border:1px solid #dcfce7}
+.detail-card .dc-answer:last-child{margin-bottom:0}
+.detail-card .dc-answers{margin-bottom:0}
+
+.hint-row{text-align:center;padding:8px;font-size:12px;color:var(--text2)}
+
+/* OCR overlay */
+.ocr-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center}
+.ocr-modal{background:#fff;border-radius:12px;padding:24px 28px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.ocr-spinner{width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px}
+.ocr-progress{height:4px;background:#e2e8f0;border-radius:2px;margin:10px 0;overflow:hidden}
+.ocr-progress-bar{height:100%;background:var(--primary);border-radius:2px;transition:width 0.3s;width:0%}
+.ocr-status{font-size:12px;color:var(--text2)}
+.ocr-cancel{margin-top:10px;font-size:13px;padding:7px 20px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:#0f172a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:300;transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275);pointer-events:none;max-width:80vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:800px){
+  .main{flex-direction:column}
+  .left{width:100%;min-width:100%;max-height:50vh}
+  .right{flex:1;min-height:30vh}
+  .detail-panel{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+<div class="logo">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+<h1>JAS产品知识加强培训</h1>
+</div>
+<div class="stats">
+<span id="totalBadge">183题</span>
+<span>单选79 · 多选102</span>
+<span>4大品类</span>
+</div>
+</div>
+
+<div class="main">
+<div class="left">
+<div class="left-header">
+<div class="upload-row">
+<span class="file-info">题库：已内置 183 题</span>
+<button class="btn-upload" id="btnUpload">📎 上传新题库</button>
+<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
+<input type="file" id="imageInput" accept="image/*" style="display:none">
+</div>
+<div class="search-box">
+<div class="search-wrap">
+<input type="text" id="searchInput" placeholder="输入题目关键词（支持模糊搜索）..." autocomplete="off">
+<button class="btn-icon ocr" id="ocrBtn" title="上传截图识题">📷</button>
+<button class="btn-icon" id="clearBtn" title="清除" style="display:none">✕</button>
+</div>
+</div>
+<div class="filter-row" id="filterRow">
+<button class="filter-chip active" data-cat="all">全部</button><button class="filter-chip" data-cat="全品类5954">全品类</button><button class="filter-chip" data-cat="头发护理5852">头发护理</button><button class="filter-chip" data-cat="织物护理5851">织物护理</button><button class="filter-chip" data-cat="综合">综合</button>
+</div>
+</div>
+<div class="result-list" id="resultList">
+<div style="text-align:center;padding:30px 0;color:#cbd5e1">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;margin-bottom:10px;opacity:0.3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+<p style="font-size:13px">输入关键词搜索，或上传截图</p>
+</div>
+</div>
+<div class="hint-row" id="hintRow"></div>
+</div>
+
+<div class="right" id="rightPanel">
+<div class="right-placeholder" id="rightPlaceholder">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+<p>点击左侧题目查看答案详情</p>
+</div>
+</div>
+</div>
+
+<div class="ocr-overlay" id="ocrOverlay">
+<div class="ocr-modal">
+<div class="ocr-spinner" id="ocrSpinner"></div>
+<div class="ocr-progress"><div class="ocr-progress-bar" id="ocrProgressBar"></div></div>
+<div class="ocr-status" id="ocrStatus">正在加载识别引擎...</div>
+<button class="ocr-cancel" id="ocrCancel">取消</button>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var BANK = [];
+fetch('questions.json').then(function(r){return r.json();}).then(function(d){BANK=d;buildFilters();}).catch(function(e){document.getElementById('resultList').innerHTML='<div style="text-align:center;padding:30px;color:#ef4444">题库加载失败，请刷新</div>';console.error(e);});
+;
+var ocrWorker = null, ocrLoading = false, ocrCancelled = false;
+var currentCat = 'all';
+var selectedIdx = -1;
+
+function fuzzyMatch(query, text) {
+  var q = query.toLowerCase().replace(/\s+/g, '');
+  var t = text.toLowerCase().replace(/\s+/g, '');
+  if (t.indexOf(q) !== -1) return 100;
+  var qi = 0;
+  for (var i = 0; i < t.length; i++) {
+    if (q[qi] === t[i]) qi++;
+    if (qi >= q.length) return Math.round(80 * qi / q.length);
+  }
+  return Math.round(60 * qi / q.length);
+}
+
+function search(query) {
+  if (!query || !query.trim()) return [];
+  var q = query.trim();
+  var results = [];
+  for (var i = 0; i < BANK.length; i++) {
+    var item = BANK[i];
+    if (currentCat !== 'all' && item.category !== currentCat) continue;
+    var score = fuzzyMatch(q, item.q);
+    if (score >= 30) results.push({item: item, score: score, idx: i});
+  }
+  results.sort(function(a, b) { return b.score - a.score; });
+  return results;
+}
+
+function escapeHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function renderList(results, query) {
+  var list = document.getElementById('resultList');
+  var hint = document.getElementById('hintRow');
+  if (!results || results.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:30px 0;color:#cbd5e1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;margin-bottom:10px;opacity:0.3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p style="font-size:13px">' + (query ? '没有匹配的题目，换个关键词试试' : '输入关键词搜索题目') + '</p></div>';
+    hint.textContent = '';
+    return;
+  }
+  hint.textContent = '共 ' + results.length + ' 条匹配，点击查看答案';
+  var html = '';
+  for (var i = 0; i < Math.min(results.length, 50); i++) {
+    var r = results[i], item = r.item;
+    var typeCls = item.type === '多选' ? 'meta-multi' : 'meta-single';
+    var answerPreview = item.answers[0];
+    if (answerPreview.length > 30) answerPreview = answerPreview.substring(0, 30) + '...';
+    html += '<div class="result-item" data-idx="' + r.idx + '" onclick="selectItem(this, ' + r.idx + ')">' +
+      '<div class="q-text">' + highlightMatch(item.q, query) + '</div>' +
+      '<div class="q-meta">' +
+        '<span class="' + typeCls + '">' + item.type + '</span>' +
+        '<span class="meta-cat">' + escapeHtml(item.category) + '</span>' +
+      '</div>' +
+      '<div class="hint">' + escapeHtml(answerPreview) + '</div>' +
+    '</div>';
+  }
+  if (results.length > 50) html += '<div style="text-align:center;padding:8px;font-size:12px;color:var(--text2)">仅显示前50条</div>';
+  list.innerHTML = html;
+  selectedIdx = -1;
+}
+
+function highlightMatch(text, query) {
+  if (!query) return escapeHtml(text);
+  var q = query.replace(/\s+/g, '');
+  var result = '', ti = 0, tlower = text.toLowerCase();
+  for (var i = 0; i < text.length; i++) {
+    if (ti < q.length && tlower[i] === q[ti].toLowerCase()) {
+      result += '<mark style="background:#fef08a;padding:1px 2px;border-radius:2px">' + escapeHtml(text[i]) + '</mark>';
+      ti++;
+    } else result += escapeHtml(text[i]);
+  }
+  return result;
+}
+
+function selectItem(el, idx) {
+  var all = document.querySelectorAll('.result-item.selected');
+  for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
+  el.classList.add('selected');
+  selectedIdx = idx;
+  showDetail(idx);
+}
+
+function showDetail(idx) {
+  var item = BANK[idx];
+  var right = document.getElementById('rightPanel');
+  var typeCls = item.type === '多选' ? 'meta-multi' : 'meta-single';
+  var answersHtml = '';
+  for (var a = 0; a < item.answers.length; a++) {
+    answersHtml += '<div class="dc-answer"><b>A' + (a+1) + '：</b>' + escapeHtml(item.answers[a]) + '</div>';
+  }
+  right.innerHTML = '<div class="detail-panel"><div class="detail-card">' +
+    '<div class="dc-header">' +
+      '<span class="dc-badge ' + typeCls + '">' + item.type + '</span>' +
+      '<span class="dc-badge meta-cat">' + escapeHtml(item.category) + '</span>' +
+    '</div>' +
+    '<div class="dc-question">' + escapeHtml(item.q) + '</div>' +
+    '<div class="dc-label">答案</div>' +
+    '<div class="dc-answers">' + answersHtml + '</div>' +
+  '</div></div>';
+}
+
+// Events
+function onSearch() {
+  var val = document.getElementById('searchInput').value;
+  document.getElementById('clearBtn').style.display = val ? '' : 'none';
+  var results = search(val);
+  renderList(results, val);
+}
+
+document.getElementById('searchInput').addEventListener('input', onSearch);
+document.getElementById('searchInput').addEventListener('focus', function() { if (this.value) onSearch(); });
+document.getElementById('clearBtn').addEventListener('click', function() {
+  document.getElementById('searchInput').value = '';
+  this.style.display = 'none';
+  currentCat = 'all';
+  var chips = document.querySelectorAll('.filter-chip');
+  for (var k = 0; k < chips.length; k++) chips[k].classList.remove('active');
+  if (chips.length > 0) chips[0].classList.add('active');
+  renderList([], '');
+  document.getElementById('rightPanel').innerHTML = '<div class="right-placeholder" id="rightPlaceholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>点击左侧题目查看答案详情</p></div>';
+});
+
+// Keyboard support
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    var items = document.querySelectorAll('.result-item');
+    if (items.length === 0) return;
+    var next = Math.min(selectedIdx + 1, items.length - 1);
+    if (next >= 0) { items[next].click(); items[next].scrollIntoView({block:'nearest'}); }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    var items = document.querySelectorAll('.result-item');
+    if (items.length === 0) return;
+    var prev = Math.max(selectedIdx - 1, 0);
+    if (prev >= 0) { items[prev].click(); items[prev].scrollIntoView({block:'nearest'}); }
+  }
+});
+
+function buildFilters() {
+  var cats = {'all': true};
+  for (var i = 0; i < BANK.length; i++) cats[BANK[i].category] = true;
+  var names = Object.keys(cats);
+  names.sort();
+  var row = document.getElementById('filterRow');
+  var dNames = {'all': '全部', '综合': '综合', '头发护理5852': '头发护理', '织物护理5851': '织物护理', '全品类5954': '全品类'};
+  var html = '';
+  for (var n = 0; n < names.length; n++) {
+    var c = names[n];
+    html += '<button class="filter-chip' + (c === 'all' ? ' active' : '') + '" data-cat="' + c + '">' + (dNames[c] || c) + '</button>';
+  }
+  row.innerHTML = html;
+  var chips = row.querySelectorAll('.filter-chip');
+  for (var j = 0; j < chips.length; j++) {
+    chips[j].addEventListener('click', function() {
+      var allChips = document.getElementById('filterRow').querySelectorAll('.filter-chip');
+      for (var k = 0; k < allChips.length; k++) allChips[k].classList.remove('active');
+      this.classList.add('active');
+      currentCat = this.dataset.cat;
+      onSearch();
+    });
+  }
+}
+
+// OCR
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(function() { t.classList.remove('show'); }, 2000);
+}
+
+document.getElementById('ocrBtn').addEventListener('click', function() { document.getElementById('imageInput').click(); });
+document.getElementById('imageInput').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  this.value = '';
+  if (!file.type.match(/image\//)) { showToast('请选择图片文件'); return; }
+  doOCR(file);
+});
+
+function doOCR(file) {
+  ocrCancelled = false;
+  var overlay = document.getElementById('ocrOverlay');
+  var spinner = document.getElementById('ocrSpinner');
+  var bar = document.getElementById('ocrProgressBar');
+  var status = document.getElementById('ocrStatus');
+  overlay.style.display = 'flex';
+  spinner.style.display = 'block';
+  bar.style.width = '0%';
+  status.textContent = '正在加载识别引擎...';
+
+  function startRecognize() {
+    if (ocrCancelled) return;
+    status.textContent = '正在识别文字...';
+    bar.style.width = '10%';
+    ocrWorker.recognize(file).then(function(result) {
+      if (ocrCancelled) return;
+      var text = (result.data.text || '').trim();
+      spinner.style.display = 'none';
+      bar.style.width = '100%';
+      if (!text) { status.textContent = '未识别到文字'; return; }
+      status.textContent = '识别完成';
+      setTimeout(function() {
+        closeOCR();
+        document.getElementById('searchInput').value = text;
+        document.getElementById('clearBtn').style.display = '';
+        var results = search(text);
+        if (results.length === 0) {
+          var lines = text.split(/\n+/).filter(function(l) { return l.trim().length > 3; });
+          if (lines.length > 0) {
+            document.getElementById('searchInput').value = lines[0];
+            results = search(lines[0]);
+          }
+        }
+        renderList(results, text);
+        if (results.length === 0) showToast('未匹配到题目');
+      }, 300);
+    }).catch(function() {
+      if (ocrCancelled) return;
+      spinner.style.display = 'none';
+      status.textContent = '识别失败';
+      showToast('OCR识别失败');
+    });
+  }
+
+  if (ocrWorker) { startRecognize(); return; }
+  if (ocrLoading) {
+    var check = setInterval(function() {
+      if (ocrWorker) { clearInterval(check); startRecognize(); }
+      if (ocrCancelled) clearInterval(check);
+    }, 200);
+    return;
+  }
+  ocrLoading = true;
+  Tesseract.createWorker('chi_sim+eng', 1, {
+    logger: function(m) {
+      if (m.status === 'recognizing text') {
+        bar.style.width = Math.round(10 + m.progress * 80) + '%';
+        status.textContent = '正在识别文字...';
+      } else status.textContent = m.status;
+    }
+  }).then(function(w) {
+    ocrWorker = w;
+    ocrLoading = false;
+    if (!ocrCancelled) startRecognize();
+  }).catch(function(err) {
+    ocrLoading = false;
+    if (!ocrCancelled) {
+      status.textContent = '引擎加载失败: ' + err.message;
+      spinner.style.display = 'none';
+    }
+  });
+}
+
+function closeOCR() { ocrCancelled = true; document.getElementById('ocrOverlay').style.display = 'none'; }
+document.getElementById('ocrCancel').addEventListener('click', closeOCR);
+
+// Upload
+document.getElementById('btnUpload').addEventListener('click', function() { document.getElementById('fileInput').click(); });
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  this.value = '';
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var wb = XLSX.read(new Uint8Array(ev.target.result), {type: 'array'});
+      var newBank = [];
+      for (var s = 0; s < wb.SheetNames.length; s++) {
+        var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[s]], {header: 1, defval: ''});
+        if (!rows || rows.length === 0) continue;
+        var h = 0;
+        for (var r = 0; r < Math.min(4, rows.length); r++) {
+          for (var c = 0; c < rows[r].length; c++) {
+            if (String(rows[r][c]).indexOf('题目') !== -1) { h = r; break; }
+          }
+          if (h > 0) break;
+        }
+        var qCol = 0, typeCol = -1, aCols = [];
+        var headerRow = rows[h];
+        for (var ci = 0; ci < headerRow.length; ci++) {
+          var ch = String(headerRow[ci]).toLowerCase();
+          if (ch.indexOf('题目') !== -1 || ch.indexOf('问题') !== -1) qCol = ci;
+          if (ch.indexOf('类型') !== -1 || ch.indexOf('题型') !== -1) typeCol = ci;
+          if (ch.indexOf('答案') !== -1) aCols.push(ci);
+        }
+        if (aCols.length === 0) aCols = [1];
+        var cat = wb.SheetNames[s] === 'Sheet1' ? '综合' : wb.SheetNames[s];
+        for (var ri = h + 1; ri < rows.length; ri++) {
+          var row = rows[ri], q = String(row[qCol] || '').trim();
+          q = q.replace(/^(单选|多选)\s*/i, '');
+          var answers = [];
+          for (var ai = 0; ai < aCols.length; ai++) {
+            var ans = String(row[aCols[ai]] || '').trim();
+            if (ans && ans !== 'nan') answers.push(ans);
+          }
+          if (!q || answers.length === 0) continue;
+          var qType = answers.length > 1 ? '多选' : '单选';
+          if (typeCol >= 0) {
+            var t = String(row[typeCol] || '');
+            if (t.indexOf('多') !== -1) qType = '多选';
+            else if (t.indexOf('单') !== -1) qType = '单选';
+          }
+          newBank.push({q: q, type: qType, answers: answers, category: cat});
+        }
+      }
+      if (newBank.length === 0) { showToast('未识别到题库数据'); return; }
+      BANK = newBank;
+      document.getElementById('totalBadge').textContent = BANK.length + '题';
+      buildFilters();
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearBtn').style.display = 'none';
+      document.getElementById('resultList').innerHTML = '<div style="text-align:center;padding:30px 0;color:#cbd5e1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;margin-bottom:10px;opacity:0.3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p style="font-size:13px">已导入 ' + BANK.length + ' 题，输入关键词搜索</p></div>';
+      document.getElementById('rightPanel').innerHTML = '<div class="right-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>点击左侧题目查看答案详情</p></div>';
+      showToast('导入成功：' + BANK.length + ' 题');
+    } catch(err) { showToast('文件解析失败'); }
+  };
+  reader.readAsArrayBuffer(file);
+});</script>
+</body>
+</html>
